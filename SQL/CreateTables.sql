@@ -1,6 +1,6 @@
 CREATE TABLE books (
     Id          int IDENTITY(1,1) PRIMARY KEY,
-    ISBN        int,
+    ISBN        BIGINT,
     Copies      int,
     BookTitle   varchar(128)
 );
