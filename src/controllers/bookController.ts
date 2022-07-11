@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { Connection, Request as TediousRequest } from 'tedious';
+import { Connection, Request as TediousRequest, Types } from 'tedious';
 
 class BookController {
     router: Router;
@@ -42,27 +42,33 @@ class BookController {
                 console.log('Error: ', err);
                 throw err;
             }
-            const databaseRequest = new TediousRequest(
-                'SELECT * FROM books WHERE id = ' + req.params.id,
-                function (err, rowCount, rows) {
-                    if (err) {
-                        console.log(err);
-                        throw err;
-                    } else {
-                        if (rows.length == 0) {
-                            return res
-                                .status(400)
-                                .json({ status: 'book not found' });
+            let id = Number(req.params.id);
+            if (isNaN(id)) {
+                return res.status(400).json({ status: 'Invalid Id' });
+            } else {
+                const sqlRequest = `SELECT * FROM books WHERE id = ${id}`;
+                const databaseRequest = new TediousRequest(
+                    sqlRequest,
+                    function (err, _rowCount, rows) {
+                        if (err) {
+                            console.log(err);
+                            throw err;
                         } else {
-                            for (let j = 0; j < rows[0].length; j++) {
-                                output.push(rows[0][j].value);
+                            if (rows.length == 0) {
+                                return res
+                                    .status(400)
+                                    .json({ status: 'book not found' });
+                            } else {
+                                for (let j = 0; j < rows[0].length; j++) {
+                                    output.push(rows[0][j].value);
+                                }
+                                return res.status(200).json(output);
                             }
-                            return res.status(200).json(output);
                         }
-                    }
-                },
-            );
-            requestStatement = connection.execSql(databaseRequest);
+                    },
+                );
+                requestStatement = connection.execSql(databaseRequest);
+            }
         });
         connection.connect();
     }
@@ -79,24 +85,19 @@ class BookController {
                 throw err;
             }
             const parsedBookTitle = req.params.bookTitle.split('_').join(' ');
-            const sqlRequest =
-                // eslint-disable-next-line quotes
-                "INSERT INTO books (BookTitle, Copies, ISBN) VALUES ( '" +
-                parsedBookTitle +
-                // eslint-disable-next-line quotes
-                "', " +
-                req.params.copies +
-                ',' +
-                req.params.ISBN +
-                // eslint-disable-next-line quotes
-                ") INSERT INTO authors (FirstName, Surname) VALUES ( '" +
-                req.params.authorFirst +
-                // eslint-disable-next-line quotes
-                "', '" +
-                req.params.authorLast +
-                // eslint-disable-next-line quotes
-                "') INSERT INTO books_authors (Author_Id, Book_Id) VALUES ( IDENT_CURRENT('authors'), IDENT_CURRENT('books')) ";
-                console.log(sqlRequest)
+
+            const sqlRequest = `INSERT INTO books (BookTitle, Copies, ISBN) 
+                VALUES ( '${parsedBookTitle}', 
+                ${req.params.copies},
+                ${req.params.ISBN}) 
+                INSERT INTO authors (FirstName, Surname) 
+                VALUES ( '${req.params.authorFirst}', 
+                '${req.params.authorLast}') 
+                INSERT INTO books_authors (Author_Id, Book_Id) 
+                VALUES ( IDENT_CURRENT('authors'), IDENT_CURRENT('books')) `;
+
+            console.log(sqlRequest);
+
             const databaseRequest = new TediousRequest(sqlRequest, function (
                 err,
             ) {
