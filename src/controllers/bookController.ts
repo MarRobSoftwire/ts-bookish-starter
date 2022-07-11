@@ -1,19 +1,24 @@
 import { Router, Request, Response } from 'express';
+import { Connection, Request as TediousRequest } from 'tedious';
 
 class BookController {
     router: Router;
-    Connection = require('tedious').Connection;
 
     config = {
-        server: "localhost:1433", // or "localhost"
-        options: {},
+        server: 'localhost',
+        options: {
+            port: 1433,
+            database: 'bookish',
+            trustServerCertificate: true,
+            rowCollectionOnRequestCompletion: true,
+        },
         authentication: {
-            type: "default",
-            options: {  
-            userName: "test",
-            password: "test",
-            }
-        }
+            type: 'default',
+            options: {
+                userName: 'markSQLSA',
+                password: 'Nacho[7]Dip',
+            },
+        },
     };
 
     constructor() {
@@ -30,22 +35,60 @@ class BookController {
     }
 
     async getBooks(req: Request, res: Response) {
-        let connection = new this.Connection(this.config);
+        const connection = new Connection(this.config);
+        let requestStatement = new String(); //Plz ignore
+        const output = [];
 
-        // Setup event handler when the connection is established. 
-        connection.on('connect', function(err) {
-            if(err) {
-                console.log('Error: ', err)
+        // Setup event handler when the connection is established.
+        connection.on('connect', async function (err) {
+            if (err) {
+                console.log('Error: ', err);
+                throw err;
             }
-            // If no error, then good to go...
-            console.log('i work!')
+            const databaseRequest = new TediousRequest(
+                'SELECT * FROM books',
+                function (err, rowCount, rows) {
+                    if (err) {
+                        console.log(err);
+                    } else {
+                        console.log(rowCount + ' rows');
+                        //console.log("something else")
+                        // console.log(rows[1][2].value)
+                        let tmp_rows = [];
+                        for (let i = 0; i < rows.length; i++) {
+                            tmp_rows = [];
+                            for (let j = 0; j < rows[i].length; j++) {
+                                // console.log(rows[i][j].value)
+                                tmp_rows.push(rows[i][j].value);
+                            }
+                            output.push(tmp_rows);
+                        }
+                        return res.status(200).json(output);
+                    }
+                },
+            );
+
+            // databaseRequest.on('row', function(columns){
+
+            //     columns.forEach(function(column){
+            //         // console.log(column.value);
+            //         output.push(column.value)
+            //     });
+            //     // console.log("Inside db request.on" + output)
+            //     // console.log(databaseRequest.rowCount)
+            //     // if (databaseRequest.rowCount == i) {
+            //     //     return res.status(200).json(output);
+            //     // } else {
+            //     //     i++;
+            //     // }
+            // });
+            // // console.log("Outside db request.on" + output)
+            requestStatement = connection.execSql(databaseRequest);
+            // // console.log(databaseRequest.rows)
         });
         connection.connect();
-        // TODO: implement functionality
-        const sql = await 1;
-        return res.status(200).json(sql);
+        console.log('After .connect' + output);
     }
-
 
     createBook(req: Request, res: Response) {
         // TODO: implement functionality
