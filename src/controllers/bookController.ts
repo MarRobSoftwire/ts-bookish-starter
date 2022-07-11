@@ -28,10 +28,40 @@ class BookController {
         this.router.post('/', this.createBook.bind(this));
     }
 
-    getBook(req: Request, res: Response) {
-        // TODO: implement functionality
+    async getBook(req: Request, res: Response) {
+        const connection = new Connection(this.config);
+        let requestStatement = new String(); //Plz ignore
+        const output = [];
 
-        return res.status(200).json({ status: 'OK' });
+        // Setup event handler when the connection is established.
+        connection.on('connect', async function (err) {
+            if (err) {
+                console.log('Error: ', err);
+                throw err;
+            }
+            const databaseRequest = new TediousRequest(
+                'SELECT * FROM books WHERE id = ' + req.params.id,
+                function (err, rowCount, rows) {
+                    if (err) {
+                        console.log(err);
+                        throw err
+                    } else {
+                        if (rows.length == 0){
+                            return res
+                                .status(400)
+                                .json({ status: 'book not found' });
+                        } else {
+                            for (let j = 0; j < rows[0].length; j++) {
+                                output.push(rows[0][j].value);
+                            }
+                            return res.status(200).json(output);
+                        }
+                    }
+                },
+            );
+            requestStatement = connection.execSql(databaseRequest);
+        });
+        connection.connect();
     }
 
     async getBooks(req: Request, res: Response) {
@@ -52,13 +82,10 @@ class BookController {
                         console.log(err);
                     } else {
                         console.log(rowCount + ' rows');
-                        //console.log("something else")
-                        // console.log(rows[1][2].value)
                         let tmp_rows = [];
                         for (let i = 0; i < rows.length; i++) {
                             tmp_rows = [];
                             for (let j = 0; j < rows[i].length; j++) {
-                                // console.log(rows[i][j].value)
                                 tmp_rows.push(rows[i][j].value);
                             }
                             output.push(tmp_rows);
@@ -67,35 +94,45 @@ class BookController {
                     }
                 },
             );
-
-            // databaseRequest.on('row', function(columns){
-
-            //     columns.forEach(function(column){
-            //         // console.log(column.value);
-            //         output.push(column.value)
-            //     });
-            //     // console.log("Inside db request.on" + output)
-            //     // console.log(databaseRequest.rowCount)
-            //     // if (databaseRequest.rowCount == i) {
-            //     //     return res.status(200).json(output);
-            //     // } else {
-            //     //     i++;
-            //     // }
-            // });
-            // // console.log("Outside db request.on" + output)
-            requestStatement = connection.execSql(databaseRequest);
-            // // console.log(databaseRequest.rows)
         });
         connection.connect();
-        console.log('After .connect' + output);
     }
 
-    createBook(req: Request, res: Response) {
-        // TODO: implement functionality
-        return res.status(500).json({
-            error: 'server_error',
-            error_description: 'Endpoint not implemented yet.',
+
+    async createBook(req: Request, res: Response) {
+        const connection = new Connection(this.config);
+        let requestStatement = new String(); //Plz ignore
+        const output = [];
+
+        // Setup event handler when the connection is established.
+        connection.on('connect', async function (err) {
+            if (err) {
+                console.log('Error: ', err);
+                throw err;
+            }
+            const databaseRequest = new TediousRequest(
+                'SELECT * FROM books WHERE id = ' + req.params.id,
+                function (err, rowCount, rows) {
+                    if (err) {
+                        console.log(err);
+                        throw err
+                    } else {
+                        if (rows.length == 0){
+                            return res
+                                .status(400)
+                                .json({ status: 'book not found' });
+                        } else {
+                            for (let j = 0; j < rows[0].length; j++) {
+                                output.push(rows[0][j].value);
+                            }
+                            return res.status(200).json(output);
+                        }
+                    }
+                },
+            );
+            requestStatement = connection.execSql(databaseRequest);
         });
+        connection.connect();
     }
 }
 
