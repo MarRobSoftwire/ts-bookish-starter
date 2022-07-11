@@ -44,9 +44,9 @@ class BookController {
                 function (err, rowCount, rows) {
                     if (err) {
                         console.log(err);
-                        throw err
+                        throw err;
                     } else {
-                        if (rows.length == 0){
+                        if (rows.length == 0) {
                             return res
                                 .status(400)
                                 .json({ status: 'book not found' });
@@ -66,7 +66,6 @@ class BookController {
 
     async getBooks(req: Request, res: Response) {
         const connection = new Connection(this.config);
-        let requestStatement = new String(); //Plz ignore
         const output = [];
 
         // Setup event handler when the connection is established.
@@ -94,10 +93,10 @@ class BookController {
                     }
                 },
             );
+            connection.execSql(databaseRequest);
         });
         connection.connect();
     }
-
 
     async createBook(req: Request, res: Response) {
         const connection = new Connection(this.config);
@@ -115,9 +114,9 @@ class BookController {
                 function (err, rowCount, rows) {
                     if (err) {
                         console.log(err);
-                        throw err
+                        throw err;
                     } else {
-                        if (rows.length == 0){
+                        if (rows.length == 0) {
                             return res
                                 .status(400)
                                 .json({ status: 'book not found' });
