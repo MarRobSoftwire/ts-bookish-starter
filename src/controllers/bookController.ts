@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { Connection, Request as TediousRequest, Types } from 'tedious';
+import { Connection, Request as TediousRequest } from 'tedious';
 
 class BookController {
     router: Router;
@@ -54,14 +54,14 @@ class BookController {
                             console.log(err);
                             throw err;
                         } else {
-                            if (rows.length == 0) {
+                            if (rows.length === 0) {
                                 return res
-                                    .status(400)
+                                    .status(404)
                                     .json({ status: 'book not found' });
                             } else {
-                                for (let j = 0; j < rows[0].length; j++) {
-                                    output.push(rows[0][j].value);
-                                }
+                                const output = rows[0].map(
+                                    (item) => item.value,
+                                );
                                 return res.status(200).json(output);
                             }
                         }
@@ -85,6 +85,8 @@ class BookController {
                 throw err;
             }
             const parsedBookTitle = req.params.bookTitle.split('_').join(' ');
+            // const replacedBookTitle = str.replace(/[^a-z0-9 ]/gi, '');
+            // const parsedcopies = Number(req.params.copies)
 
             const sqlRequest = `INSERT INTO books (BookTitle, Copies, ISBN) 
                 VALUES ( '${parsedBookTitle}', 
@@ -104,9 +106,7 @@ class BookController {
                 if (err) {
                     console.log(err);
                 } else {
-                    return res
-                        .status(200)
-                        .json({ status: 'Book has been added' });
+                    return res.status(201).json();
                 }
             });
             requestStatement = connection.execSql(databaseRequest);
@@ -130,15 +130,9 @@ class BookController {
                     if (err) {
                         console.log(err);
                     } else {
-                        console.log(rowCount + ' rows');
-                        let tmp_rows = [];
-                        for (let i = 0; i < rows.length; i++) {
-                            tmp_rows = [];
-                            for (let j = 0; j < rows[i].length; j++) {
-                                tmp_rows.push(rows[i][j].value);
-                            }
-                            output.push(tmp_rows);
-                        }
+                        const output = rows.map((row) =>
+                            row.map((item) => item.value),
+                        );
                         return res.status(200).json(output);
                     }
                 },
